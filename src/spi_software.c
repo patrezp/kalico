@@ -40,6 +40,12 @@ DECL_COMMAND(command_spi_set_sw_bus,
              "spi_set_sw_bus oid=%c miso_pin=%u mosi_pin=%u sclk_pin=%u"
              " mode=%u pulse_ticks=%u");
 
+static void
+spi_delay(uint32_t end)
+{
+    while (timer_is_before(timer_read_time(), end));
+}
+
 void
 spi_software_prepare(struct spi_software *ss)
 {
