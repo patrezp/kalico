@@ -9,6 +9,7 @@
 #include "gpio.h" // spi_setup
 #include "internal.h" // gpio_peripheral
 #include "sched.h" // sched_shutdown
+#include "board/misc.h" // timer_is_before
 
 struct spi_info {
     SPI_TypeDef *spi;
@@ -102,8 +103,14 @@ spi_setup(uint32_t bus, uint8_t mode, uint32_t rate)
 
     spi->CFG1 |= (div << SPI_CFG1_MBR_Pos) | (7 << SPI_CFG1_DSIZE_Pos);
     CLEAR_BIT(spi->CFG1, SPI_CFG1_CRCSIZE);
-    spi->CFG2 |= ((mode << SPI_CFG2_CPHA_Pos) | SPI_CFG2_MASTER | SPI_CFG2_SSM
-                   | SPI_CFG2_AFCNTR | SPI_CFG2_SSOE);
+    uint32_t cfg2 = ((mode << SPI_CFG2_CPHA_Pos) | SPI_CFG2_MASTER
+                     | SPI_CFG2_SSM | SPI_CFG2_AFCNTR | SPI_CFG2_SSOE);
+    uint32_t diff = spi->CFG2 ^ cfg2;
+    spi->CFG2 = cfg2;
+    uint32_t end = timer_read_time() + timer_from_us(1);
+    if (diff & SPI_CFG2_CPOL_Msk)
+        while (timer_is_before(timer_read_time(), end))
+            ;
     spi->CR1 |= SPI_CR1_SSI;
 
     return (struct spi_config){ .spi = spi, .div = div, .mode = mode };

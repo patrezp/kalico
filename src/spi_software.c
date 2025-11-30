@@ -44,12 +44,8 @@ void
 spi_software_prepare(struct spi_software *ss)
 {
     gpio_out_write(ss->sclk, ss->mode & 0x02);
-}
-
-static void
-spi_delay(uint32_t end)
-{
-    while (timer_is_before(timer_read_time(), end));
+    uint32_t end = timer_read_time() + ss->sck_ticks;
+    spi_delay(end);
 }
 
 void
